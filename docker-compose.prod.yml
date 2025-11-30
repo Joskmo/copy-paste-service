@@ -18,6 +18,8 @@ services:
     image: traefik:v3.5
     container_name: traefik
     restart: unless-stopped
+    environment:
+      - DOCKER_API_VERSION=1.52
     command:
       # API Dashboard (опционально, для отладки)
       - "--api.dashboard=false"
