@@ -10,4 +10,5 @@ RUN apk add --no-cache wget \
 WORKDIR /migrations
 COPY migrations/*.sql ./
 
-CMD ["sh", "-c", "goose postgres \"$GOOSE_DBSTRING\" up"]
+# GOOSE_DRIVER and GOOSE_DBSTRING are set via environment variables
+CMD ["sh", "-c", "goose -dir /migrations up"]
