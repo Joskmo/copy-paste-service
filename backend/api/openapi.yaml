@@ -1,0 +1,224 @@
+openapi: 3.0.3
+info:
+  title: Copy Paste Service API
+  description: |
+    A simple service for quickly sharing text snippets via short, human-readable URLs.
+    Notes are automatically deleted after 3 hours.
+  version: 1.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Returns the health status of the service
+      operationId: healthCheck
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /api/notes:
+    post:
+      summary: Create a new note
+      description: Creates a new note with the provided content and returns a short, human-readable URL
+      operationId: createNote
+      tags:
+        - Notes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNoteRequest'
+            example:
+              content: "Hello, this is my text to share!"
+      responses:
+        '201':
+          description: Note created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateNoteResponse'
+              example:
+                id: "sunny-cat-42"
+                url: "http://localhost:8080/api/notes/sunny-cat-42"
+                expires_at: "2024-01-15T18:30:00Z"
+        '400':
+          description: Invalid request (empty content or invalid JSON)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "empty_content"
+                message: "Note content cannot be empty"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/notes/{id}:
+    get:
+      summary: Get a note by ID
+      description: Retrieves a note by its human-readable ID
+      operationId: getNote
+      tags:
+        - Notes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The human-readable note ID (e.g., "sunny-cat-42")
+          schema:
+            type: string
+          example: "sunny-cat-42"
+      responses:
+        '200':
+          description: Note found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetNoteResponse'
+              example:
+                id: "sunny-cat-42"
+                content: "Hello, this is my text to share!"
+                created_at: "2024-01-15T15:30:00Z"
+                expires_at: "2024-01-15T18:30:00Z"
+        '404':
+          description: Note not found or has expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "not_found"
+                message: "Note not found or has expired"
+
+  /api/notes/{id}/raw:
+    get:
+      summary: Get raw note content
+      description: Returns the note content as plain text (useful for curl/wget)
+      operationId: getNoteRaw
+      tags:
+        - Notes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The human-readable note ID
+          schema:
+            type: string
+          example: "sunny-cat-42"
+      responses:
+        '200':
+          description: Note content as plain text
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: "Hello, this is my text to share!"
+        '404':
+          description: Note not found or has expired
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: "Note not found or has expired"
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "ok"
+      required:
+        - status
+
+    CreateNoteRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          description: The text content of the note
+          minLength: 1
+          maxLength: 1000000
+      required:
+        - content
+
+    CreateNoteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Human-readable note ID
+          example: "sunny-cat-42"
+        url:
+          type: string
+          description: Full URL to access the note
+          example: "http://localhost:8080/api/notes/sunny-cat-42"
+        expires_at:
+          type: string
+          format: date-time
+          description: When the note will be automatically deleted
+      required:
+        - id
+        - url
+        - expires_at
+
+    GetNoteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Human-readable note ID
+        content:
+          type: string
+          description: The text content of the note
+        created_at:
+          type: string
+          format: date-time
+          description: When the note was created
+        expires_at:
+          type: string
+          format: date-time
+          description: When the note will be automatically deleted
+      required:
+        - id
+        - content
+        - created_at
+        - expires_at
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Human-readable error message
+      required:
+        - error
+        - message
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Notes
+    description: Note management endpoints
+
