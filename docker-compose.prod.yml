@@ -25,6 +25,7 @@ services:
       - "--api.dashboard=false"
       # Docker provider
       - "--providers.docker=true"
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
       - "--providers.docker.exposedbydefault=false"
       # Entrypoints
       - "--entrypoints.web.address=:80"
