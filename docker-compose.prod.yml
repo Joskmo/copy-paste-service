@@ -3,46 +3,27 @@
 # ===========================================
 #
 # Использование:
-# 1. Скопируйте .env.example в .env и заполните переменные
+# 1. Создайте .env файл с переменными
 # 2. Запустите: docker compose -f docker-compose.prod.yml up -d
-#
-# Требования:
-# - Домен должен указывать на IP сервера
-# - Порты 80 и 443 должны быть открыты
 
 services:
   # ===========================================
-  # TRAEFIK - Reverse Proxy + SSL
+  # CADDY - Reverse Proxy + Auto SSL
   # ===========================================
-  traefik:
-    image: traefik:v3.5
-    container_name: traefik
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
     restart: unless-stopped
-    environment:
-      - DOCKER_API_VERSION=1.52
-    command:
-      # API Dashboard (опционально, для отладки)
-      - "--api.dashboard=false"
-      # Docker provider
-      - "--providers.docker=true"
-      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
-      - "--providers.docker.exposedbydefault=false"
-      # Entrypoints
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      # HTTP -> HTTPS redirect
-      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-      # Let's Encrypt
-      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "letsencrypt_data:/letsencrypt"
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
     networks:
       - web
 
@@ -115,13 +96,6 @@ services:
       timeout: 3s
       retries: 3
       start_period: 10s
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`, `/health`, `/swagger`)"
-      - "traefik.http.routers.backend.entrypoints=websecure"
-      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
-      - "traefik.http.services.backend.loadbalancer.server.port=8080"
-      - "traefik.http.routers.backend.priority=2"
     networks:
       - web
       - internal
@@ -141,13 +115,6 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.frontend.entrypoints=websecure"
-      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
-      - "traefik.http.services.frontend.loadbalancer.server.port=80"
-      - "traefik.http.routers.frontend.priority=1"
     networks:
       - web
 
@@ -159,5 +126,5 @@ networks:
 
 volumes:
   postgres_data:
-  letsencrypt_data:
-
+  caddy_data:
+  caddy_config:

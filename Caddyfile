@@ -1,0 +1,22 @@
+{$DOMAIN} {
+    # Frontend - все запросы кроме API
+    handle {
+        reverse_proxy frontend:80
+    }
+
+    # Backend API
+    handle /api/* {
+        reverse_proxy backend:8080
+    }
+
+    # Health check
+    handle /health {
+        reverse_proxy backend:8080
+    }
+
+    # Swagger
+    handle /swagger/* {
+        reverse_proxy backend:8080
+    }
+}
+
