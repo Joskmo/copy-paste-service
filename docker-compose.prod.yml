@@ -1,29 +1,22 @@
 # ===========================================
 # PRODUCTION DOCKER COMPOSE с Let's Encrypt
 # ===========================================
-#
-# Использование:
-# 1. Создайте .env файл с переменными
-# 2. Запустите: docker compose -f docker-compose.prod.yml up -d
 
 services:
   # ===========================================
-  # CADDY - Reverse Proxy + Auto SSL
+  # TRAEFIK - Reverse Proxy + SSL
   # ===========================================
-  caddy:
-    image: caddy:2-alpine
-    container_name: caddy
+  traefik:
+    image: traefik:v3.2
+    container_name: traefik
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      backend:
-        condition: service_healthy
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik-dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - letsencrypt_data:/letsencrypt
     networks:
       - web
 
@@ -126,5 +119,4 @@ networks:
 
 volumes:
   postgres_data:
-  caddy_data:
-  caddy_config:
+  letsencrypt_data:

@@ -2,16 +2,6 @@
 # ===========================================
 # СКРИПТ ДЕПЛОЯ Copy Paste Service
 # ===========================================
-#
-# Использование:
-#   chmod +x deploy.sh
-#   ./deploy.sh
-#
-# Требования:
-#   - Docker и Docker Compose установлены
-#   - Файл .env заполнен
-#   - Домен указывает на IP сервера
-#   - Порты 80 и 443 открыты
 
 set -e
 
@@ -22,14 +12,20 @@ echo "================================"
 if [ ! -f .env ]; then
     echo "❌ Файл .env не найден!"
     echo ""
-    echo "Создайте его из примера:"
-    echo "  cp .env.production.example .env"
+    echo "Создайте его:"
     echo "  nano .env"
+    echo ""
+    echo "Содержимое:"
+    echo "  DOMAIN=paste.example.com"
+    echo "  ACME_EMAIL=admin@example.com"
+    echo "  DB_PASSWORD=secure_password"
     exit 1
 fi
 
 # Загрузка переменных
+set -a
 source .env
+set +a
 
 # Проверка обязательных переменных
 if [ -z "$DOMAIN" ]; then
@@ -42,8 +38,8 @@ if [ -z "$ACME_EMAIL" ]; then
     exit 1
 fi
 
-if [ "$DB_PASSWORD" = "CHANGE_ME_TO_SECURE_PASSWORD" ]; then
-    echo "❌ Измените DB_PASSWORD в .env!"
+if [ -z "$DB_PASSWORD" ]; then
+    echo "❌ Задайте DB_PASSWORD в .env!"
     exit 1
 fi
 
@@ -52,20 +48,26 @@ echo "   Домен: $DOMAIN"
 echo "   Email: $ACME_EMAIL"
 echo ""
 
+# Генерация конфигурации Traefik из шаблонов
+echo "📝 Генерация конфигурации Traefik..."
+envsubst < traefik.yml.template > traefik.yml
+envsubst < traefik-dynamic.yml.template > traefik-dynamic.yml
+
 # Остановка старых контейнеров
 echo "⏹️  Остановка старых контейнеров..."
 docker compose -f docker-compose.prod.yml down 2>/dev/null || true
 
-# Сборка и запуск
+# Сборка образов
 echo "🔨 Сборка образов..."
 docker compose -f docker-compose.prod.yml build
 
+# Запуск
 echo "🚀 Запуск сервисов..."
 docker compose -f docker-compose.prod.yml up -d
 
 # Ожидание запуска
 echo "⏳ Ожидание запуска сервисов..."
-sleep 10
+sleep 15
 
 # Проверка статуса
 echo ""
@@ -82,5 +84,3 @@ echo "📝 Полезные команды:"
 echo "   Логи:     docker compose -f docker-compose.prod.yml logs -f"
 echo "   Статус:   docker compose -f docker-compose.prod.yml ps"
 echo "   Стоп:     docker compose -f docker-compose.prod.yml down"
-echo "   Рестарт:  docker compose -f docker-compose.prod.yml restart"
-
