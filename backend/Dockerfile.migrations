@@ -1,11 +1,11 @@
 # Migrations Dockerfile
-FROM golang:1.24-alpine AS builder
-
-RUN go install github.com/pressly/goose/v3/cmd/goose@latest
-
 FROM alpine:3.19
 
-COPY --from=builder /go/bin/goose /usr/local/bin/goose
+# Download goose binary
+RUN apk add --no-cache wget \
+    && wget -q https://github.com/pressly/goose/releases/download/v3.26.0/goose_linux_x86_64 -O /usr/local/bin/goose \
+    && chmod +x /usr/local/bin/goose \
+    && apk del wget
 
 WORKDIR /migrations
 COPY migrations/*.sql ./
