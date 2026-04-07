@@ -48,11 +48,6 @@ echo "   Домен: $DOMAIN"
 echo "   Email: $ACME_EMAIL"
 echo ""
 
-# Генерация конфигурации Traefik из шаблонов
-echo "📝 Генерация конфигурации Traefik..."
-envsubst < traefik.yml.template > traefik.yml
-envsubst < traefik-dynamic.yml.template > traefik-dynamic.yml
-
 # Остановка старых контейнеров
 echo "⏹️  Остановка старых контейнеров..."
 docker compose -f docker-compose.prod.yml down 2>/dev/null || true

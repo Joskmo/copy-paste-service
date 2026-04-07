@@ -4,23 +4,6 @@
 
 services:
   # ===========================================
-  # TRAEFIK - Reverse Proxy + SSL
-  # ===========================================
-  traefik:
-    image: traefik:v3.2
-    container_name: traefik
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./traefik.yml:/etc/traefik/traefik.yml:ro
-      - ./traefik-dynamic.yml:/etc/traefik/dynamic.yml:ro
-      - letsencrypt_data:/letsencrypt
-    networks:
-      - web
-
-  # ===========================================
   # DATABASE
   # ===========================================
   postgres:
@@ -89,6 +72,13 @@ services:
       timeout: 3s
       retries: 3
       start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cpp-backend.rule=Host(`${DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/health`) || PathPrefix(`/swagger`))"
+      - "traefik.http.routers.cpp-backend.entrypoints=websecure"
+      - "traefik.http.routers.cpp-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.cpp-backend.priority=2"
+      - "traefik.http.services.cpp-backend.loadbalancer.server.port=8080"
     networks:
       - web
       - internal
@@ -108,15 +98,21 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cpp-frontend.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.cpp-frontend.entrypoints=websecure"
+      - "traefik.http.routers.cpp-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.cpp-frontend.priority=1"
+      - "traefik.http.services.cpp-frontend.loadbalancer.server.port=80"
     networks:
       - web
 
 networks:
   web:
-    name: web
+    external: true
   internal:
     name: internal
 
 volumes:
   postgres_data:
-  letsencrypt_data:
