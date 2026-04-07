@@ -17,7 +17,6 @@ if [ ! -f .env ]; then
     echo ""
     echo "Содержимое:"
     echo "  DOMAIN=paste.example.com"
-    echo "  ACME_EMAIL=admin@example.com"
     echo "  DB_PASSWORD=secure_password"
     exit 1
 fi
@@ -33,11 +32,6 @@ if [ -z "$DOMAIN" ]; then
     exit 1
 fi
 
-if [ -z "$ACME_EMAIL" ]; then
-    echo "❌ Переменная ACME_EMAIL не задана в .env"
-    exit 1
-fi
-
 if [ -z "$DB_PASSWORD" ]; then
     echo "❌ Задайте DB_PASSWORD в .env!"
     exit 1
@@ -45,7 +39,6 @@ fi
 
 echo "📋 Конфигурация:"
 echo "   Домен: $DOMAIN"
-echo "   Email: $ACME_EMAIL"
 echo ""
 
 # Остановка старых контейнеров
