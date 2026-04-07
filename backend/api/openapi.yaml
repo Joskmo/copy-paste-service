@@ -9,8 +9,8 @@ info:
     name: API Support
 
 servers:
-  - url: http://localhost:8080
-    description: Local development server
+  - url: /
+    description: Current server
 
 paths:
   /health:
@@ -52,7 +52,7 @@ paths:
                 $ref: '#/components/schemas/CreateNoteResponse'
               example:
                 id: "sunny-cat-42"
-                url: "http://localhost:8080/api/notes/sunny-cat-42"
+                url: "https://example.com/api/notes/sunny-cat-42"
                 expires_at: "2024-01-15T18:30:00Z"
         '400':
           description: Invalid request (empty content or invalid JSON)
